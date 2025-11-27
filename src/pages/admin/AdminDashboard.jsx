@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import Swal from "sweetalert2";
 
 export default function AdminDashboard() {
   const [candidates, setCandidates] = useState([]);
@@ -10,26 +11,22 @@ export default function AdminDashboard() {
   const [endTime, setEndTime] = useState(null);
   const [elapsed, setElapsed] = useState("00:00:00");
 
-  // LOAD DATA
+  // ========================= LOAD DATA =========================
   useEffect(() => {
-    const load = async () => {
-      const res = await fetch("http://localhost:5000/api/voters/summary");
-      const data = await res.json();
-      setVotes(data.data);
-    };
+    setVotingOpen(JSON.parse(localStorage.getItem("voting_open")) || false);
+    setStartTime(localStorage.getItem("voting_start_time"));
+    setEndTime(localStorage.getItem("voting_end_time"));
 
-    load();
-    const interval = setInterval(load, 1000); // real-time 1 detik
-    return () => clearInterval(interval);
+    fetchVotes();
+    fetchVoters();
   }, []);
 
-  // TIMER BERJALAN
+  // ========================= TIMER BERJALAN =========================
   useEffect(() => {
     if (!votingOpen || !startTime) return;
 
-    const start = new Date(startTime);
-
     const interval = setInterval(() => {
+      const start = new Date(startTime);
       const now = new Date();
       const diff = Math.floor((now - start) / 1000);
 
@@ -43,10 +40,48 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, [votingOpen, startTime]);
 
-  // MULAI VOTING
-  const startVoting = () => {
+  // ========================= REALTIME FETCH =========================
+  useEffect(() => {
+    fetchVotes();
+    fetchVoters();
+
+    const interval = setInterval(() => {
+      fetchVotes();
+      fetchVoters();
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // ========================= FETCH DATA =========================
+  const fetchVotes = async () => {
+    try {
+      const res = await fetch("/api/votes");
+      const out = await res.json();
+
+      if (out.success) {
+        setVotes(out.data);
+      }
+    } catch (err) {
+      console.error("VOTES ERROR:", err);
+    }
+  };
+
+  const fetchVoters = async () => {
+    try {
+      const res = await fetch("/api/voters");
+      const data = await res.json();
+      if (data.success) setVoters(data.data);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  // ========================= START VOTING =========================
+  const startVoting = async () => {
     const now = new Date().toLocaleString();
 
+    // 🔥 Update FE (tetap pakai kode lama)
     localStorage.setItem("voting_open", true);
     localStorage.setItem("voting_start_time", now);
     localStorage.removeItem("voting_end_time");
@@ -54,10 +89,14 @@ export default function AdminDashboard() {
     setVotingOpen(true);
     setStartTime(now);
     setEndTime(null);
+
+    // 🔥 Update REAL ke backend (WAJIB)
+    await fetch("/api/voting/open", {
+      method: "POST",
+    });
   };
 
-  // STOP VOTING
-  const stopVoting = () => {
+  const stopVoting = async () => {
     const now = new Date().toLocaleString();
 
     localStorage.setItem("voting_open", false);
@@ -65,23 +104,79 @@ export default function AdminDashboard() {
 
     setVotingOpen(false);
     setEndTime(now);
+
+    // 🔥 Update REAL ke backend (WAJIB)
+    await fetch("/api/voting/close", {
+      method: "POST",
+    });
   };
 
-  // RESET DATA
-  const resetVoting = () => {
-    if (!confirm("Reset semua suara dan daftar pemilih?")) return;
+  // ========================= RESET — DITAMBAHKAN =========================
+  // ========================= RESET — SWEETALERT VERSION =========================
+  const resetVoting = async () => {
+    const confirmReset = await Swal.fire({
+      title: "Reset Voting?",
+      text: "Semua data pemilih dan suara akan dihapus permanen.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Ya, reset!",
+      cancelButtonText: "Batal",
+      background: "#1e1e1e",
+      color: "#fff",
+    });
 
-    localStorage.removeItem("votes");
-    localStorage.removeItem("voters");
-    localStorage.removeItem("has_voted");
+    if (!confirmReset.isConfirmed) return;
 
-    setVotes({});
-    setVoters([]);
+    try {
+      // Hapus local storage (FE)
+      localStorage.removeItem("votes");
+      localStorage.removeItem("voters");
+      localStorage.removeItem("has_voted");
+      localStorage.removeItem("hasVoted");
+      localStorage.removeItem("user_name");
+
+      // Reset state FE
+      setVotes({});
+      setVoters([]);
+
+      // Panggil API reset backend
+      const res = await fetch("/api/reset", {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Gagal reset data!");
+
+      await Swal.fire({
+        icon: "success",
+        title: "Berhasil!",
+        text: "Voting berhasil direset.",
+        background: "#1e1e1e",
+        color: "#fff",
+        confirmButtonColor: "#ff7f00",
+      });
+
+      fetchVotes();
+      fetchVoters();
+    } catch (err) {
+      Swal.fire({
+        icon: "error",
+        title: "Gagal!",
+        text: err.message,
+        background: "#1e1e1e",
+        color: "#fff",
+        confirmButtonColor: "#ff7f00",
+      });
+    }
   };
 
+  // ========================= UI =========================
   return (
     <div className="min-h-screen bg-animated-gradient p-10 text-white">
-      <h1 className="text-3xl font-bold mb-8 text-center">Dashboard Admin</h1>
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        Dashboard Admin (Realtime)
+      </h1>
 
       {/* CONTROL BUTTONS */}
       <div className="flex gap-4 justify-center mb-8">
@@ -109,58 +204,58 @@ export default function AdminDashboard() {
         </button>
       </div>
 
-      {/* STATUS WAKTU */}
-      <div className="bg-white/10 p-5 rounded-xl border border-white/20 max-w-xl mx-auto mb-10">
-        <h2 className="text-xl font-bold mb-3 text-center">Status Pemilihan</h2>
+      {/* STATUS BOX */}
+      <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-xl px-8 py-6 max-w-lg mx-auto mb-10 text-center">
+        <h2 className="text-xl font-bold mb-3">Status Pemilihan</h2>
 
         <p className="text-white/80">
-          <b>Mulai:</b> {startTime || "Belum dimulai"}
+          <b>Mulai:</b> {startTime || "-"}
         </p>
 
         <p className="text-white/80">
-          <b>Selesai:</b> {endTime || "Belum selesai"}
+          <b>Selesai:</b> {endTime || (votingOpen ? "Belum selesai" : "-")}
         </p>
 
-        {votingOpen && (
-          <p className="text-white/90 mt-3">
-            ⏳ <b>Waktu Berjalan:</b> {elapsed}
-          </p>
-        )}
-
-        <p className="mt-4 text-center">
+        <p className="mt-3 text-center">
           {votingOpen ? (
-            <span className="text-green-400 font-bold">
+            <span className="text-green-400 font-semibold">
               Voting Sedang Berlangsung
             </span>
           ) : (
-            <span className="text-red-300 font-bold">Voting Tidak Aktif</span>
+            <span className="text-red-300 font-semibold">
+              Voting Belum Dimulai / Telah Selesai
+            </span>
           )}
         </p>
+
+        {votingOpen && (
+          <p className="mt-2 text-blue-300 font-bold text-lg">
+            ⏳ Berjalan: {elapsed}
+          </p>
+        )}
       </div>
 
-      {/* TOTAL SUARA */}
-      <h2 className="text-2xl font-bold mb-3">Perolehan Suara</h2>
-
+      {/* VOTE COUNTS */}
+      <h2 className="text-2xl font-bold mb-3">Perolehan Suara (Realtime)</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-        {candidates.map((c) => (
+        {[1, 2].map((id) => (
           <div
-            key={c.id}
+            key={id}
             className="bg-white/10 p-5 rounded-xl border border-white/20 shadow-lg"
           >
-            <h3 className="text-xl font-semibold mb-2">{c.name}</h3>
+            <h3 className="text-xl font-semibold mb-2">Kandidat {id}</h3>
             <p className="text-white text-lg">
-              Total Suara: <b>{votes[c.id] || 0}</b>
+              Total Suara: <b>{votes[id] || 0}</b>
             </p>
           </div>
         ))}
       </div>
 
-      {/* DAFTAR PEMILIH */}
-      <h2 className="text-2xl font-bold mb-3">Daftar Pemilih</h2>
-
+      {/* LIST PEMILIH */}
+      <h2 className="text-2xl font-bold mb-3">Daftar Pemilih (Realtime)</h2>
       <div className="bg-white/10 p-5 rounded-xl border border-white/20 shadow-lg">
         {voters.length === 0 ? (
-          <p className="text-white/70">Belum ada yang memilih.</p>
+          <p className="text-white/70">Belum ada pemilih.</p>
         ) : (
           <table className="w-full text-left text-white">
             <thead>
@@ -173,7 +268,7 @@ export default function AdminDashboard() {
             <tbody>
               {voters.map((v, i) => (
                 <tr key={i} className="border-b border-white/10">
-                  <td className="py-2">{v.name}</td>
+                  <td className="py-2">{v.voter_name}</td>
                   <td>{v.candidate_name}</td>
                   <td>{v.time}</td>
                 </tr>

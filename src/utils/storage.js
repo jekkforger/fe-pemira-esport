@@ -1,9 +1,9 @@
 export const saveUser = (name) => {
-  localStorage.setItem("pemira_user", name);
+  localStorage.setItem("user_name", name);
 };
 
 export const getUser = () => {
-  return localStorage.getItem("pemira_user");
+  return localStorage.getItem("user_name");
 };
 
 export const setHasVoted = () => {

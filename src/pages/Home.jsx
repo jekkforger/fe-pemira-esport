@@ -1,30 +1,71 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { saveUser } from "../utils/storage";
 import Logo from "/logo.png";
+import Swal from "sweetalert2";
 
 export default function Home() {
   const [openModal, setOpenModal] = useState(false);
-  const [openGallery, setOpenGallery] = useState(false); // ⬅ STATE POPUP GALERI
+  const [openGallery, setOpenGallery] = useState(false);
   const [name, setName] = useState("");
+  const [statusReady, setStatusReady] = useState(false);
 
-const startVoting = async () => {
-  if (!name.trim()) return;
+  // 🔥 Ambil status voting REAL dari backend
+  useEffect(() => {
+    fetch("/api/status")
+      .then((res) => res.json())
+      .then((data) => {
+        // simpan ke localStorage supaya kode lama tetap jalan
+        localStorage.setItem("voting_open", JSON.stringify(data.voting_open));
 
-  const res = await fetch("http://localhost:5000/api/voting/status");
-  const status = await res.json();
+        setStatusReady(true);
+      })
+      .catch(() => {
+        Swal.fire({
+          icon: "error",
+          title: "Gagal memuat status",
+          text: "Periksa server backend!",
+          background: "#1e1e1e",
+          color: "#fff",
+        });
+      });
+  }, []);
 
-  if (!status.voting_open) {
-    alert("Voting belum dibuka oleh admin!");
-    return;
-  }
+  const startVoting = async () => {
+    if (!statusReady) return;
 
-  sessionStorage.setItem("voter_name", name);
-  window.location.href = "/vote";
-};
+    // Ambil status REAL dari backend (bukan dari localStorage)
+    const res = await fetch("/api/status");
+    const data = await res.json();
+
+    if (!data.voting_open) {
+      Swal.fire({
+        icon: "warning",
+        title: "Voting Belum Dibuka",
+        text: "Tunggu admin membuka sesi voting.",
+        confirmButtonColor: "#ff7f00",
+        background: "rgba(20,20,20,0.95)",
+        color: "#fff",
+      });
+      return;
+    }
+
+    if (!name.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Nama tidak boleh kosong",
+        background: "#1e1e1e",
+        color: "#fff",
+        confirmButtonColor: "#ff7f00",
+      });
+      return;
+    }
+
+    saveUser(name);
+    window.location.href = "/vote";
+  };
 
   return (
     <div className="min-h-screen bg-animated-gradient flex flex-col items-center justify-center px-5">
-      
       {/* LOGO */}
       <img
         src={Logo}
@@ -49,9 +90,22 @@ const startVoting = async () => {
 
       {/* BUTTON UTAMA */}
       <button
-        onClick={() => setOpenModal(true)}
+        onClick={() => {
+          if (!statusReady) {
+            Swal.fire({
+              icon: "info",
+              title: "Sedang memuat...",
+              text: "Tunggu sebentar, sedang mengambil status pemilihan.",
+              background: "#1e1e1e",
+              color: "#fff",
+              confirmButtonColor: "#ff7f00",
+            });
+            return;
+          }
+          setOpenModal(true);
+        }}
         className="w-full max-w-xs bg-orange-500 hover:bg-orange-600 transition p-3 rounded-lg text-white 
-               font-semibold mb-4 animate-fadeIn delay-200"
+         font-semibold mb-4 animate-fadeIn delay-200"
       >
         Mulai Memilih
       </button>
@@ -63,6 +117,17 @@ const startVoting = async () => {
           className="w-full max-w-xs bg-blue-600/40 hover:bg-blue-600/60 transition p-3 rounded-lg text-white font-semibold shadow-lg shadow-blue-500/40"
         >
           Galeri Prestasi
+        </button>
+      </div>
+
+      {/* CARD LOGIN ADMIN */}
+      <div className="w-full max-w-xs mt-4 animate-fadeIn delay-400">
+        <button
+          onClick={() => (window.location.href = "/admin")}
+          className="w-full bg-white/15 hover:bg-white/25 transition p-3 rounded-lg 
+               text-white font-semibold shadow-md shadow-black/20 text-sm"
+        >
+          Login Admin
         </button>
       </div>
 
@@ -107,7 +172,6 @@ const startVoting = async () => {
       {openGallery && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center animate-fadeIn p-4 overflow-y-auto">
           <div className="bg-white/10 border border-white/20 rounded-xl p-6 shadow-xl max-w-4xl w-full animate-pop">
-
             <h2 className="text-white text-2xl font-bold mb-6 text-center">
               Galeri Prestasi Polban Esport
             </h2>
@@ -135,11 +199,9 @@ const startVoting = async () => {
             >
               Tutup
             </button>
-
           </div>
         </div>
       )}
-
     </div>
   );
 }
