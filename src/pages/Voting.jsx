@@ -34,7 +34,7 @@ export default function Voting() {
 
   // 🔥 Ambil status voting dari backend
   useEffect(() => {
-    fetch("/api/status")
+    fetch(import.meta.env.VITE_API_URL + "/api/status")
       .then((res) => res.json())
       .then((data) => {
         localStorage.setItem("voting_open", JSON.stringify(data.voting_open));
@@ -89,7 +89,7 @@ export default function Voting() {
   // ===================== CEK REAL-TIME ADMIN STOP =====================
   useEffect(() => {
     const interval = setInterval(async () => {
-      const res = await fetch("/api/status");
+      const res = await fetch(import.meta.env.VITE_API_URL + "/api/status");
       const { voting_open } = await res.json();
 
       localStorage.setItem("voting_open", JSON.stringify(voting_open));
@@ -154,7 +154,7 @@ export default function Voting() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const response = await fetch("/api/voters", {
+      const response = await fetch(import.meta.env.VITE_API_URL + "/api/voters", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

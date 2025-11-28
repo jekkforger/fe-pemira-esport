@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   // ========================= FETCH DATA =========================
   const fetchVotes = async () => {
     try {
-      const res = await fetch("/api/votes");
+      const res = await fetch(import.meta.env.VITE_API_URL + "/api/votes");
       const out = await res.json();
 
       if (out.success) {
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
   const fetchVoters = async () => {
     try {
-      const res = await fetch("/api/voters");
+      const res = await fetch(import.meta.env.VITE_API_URL + "/api/voters");
       const data = await res.json();
       if (data.success) setVoters(data.data);
     } catch (err) {
@@ -91,7 +91,7 @@ export default function AdminDashboard() {
     setEndTime(null);
 
     // 🔥 Update REAL ke backend (WAJIB)
-    await fetch("/api/voting/open", {
+    await fetch(import.meta.env.VITE_API_URL + "/api/voting/open", {
       method: "POST",
     });
   };
@@ -106,7 +106,7 @@ export default function AdminDashboard() {
     setEndTime(now);
 
     // 🔥 Update REAL ke backend (WAJIB)
-    await fetch("/api/voting/close", {
+    await fetch(import.meta.env.VITE_API_URL + "/api/voting/close", {
       method: "POST",
     });
   };
@@ -142,7 +142,7 @@ export default function AdminDashboard() {
       setVoters([]);
 
       // Panggil API reset backend
-      const res = await fetch("/api/reset", {
+      const res = await fetch(import.meta.env.VITE_API_URL + "/api/reset", {
         method: "DELETE",
       });
 
