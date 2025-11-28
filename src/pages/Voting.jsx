@@ -151,7 +151,7 @@ export default function Voting() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/voters`, {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/vote`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
