@@ -134,7 +134,7 @@ export default function AdminDashboard() {
       setVotes({});
       setVoters([]);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reset`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/reset`, {
         method: "DELETE",
       });
 
