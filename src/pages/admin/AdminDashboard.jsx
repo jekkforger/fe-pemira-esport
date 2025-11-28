@@ -56,7 +56,7 @@ export default function AdminDashboard() {
   // ========================= FETCH DATA =========================
   const fetchVotes = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/votes`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/vote`);
       const out = await res.json();
 
       if (out.success) setVotes(out.data);
@@ -67,7 +67,7 @@ export default function AdminDashboard() {
 
   const fetchVoters = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voters`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/vote`);
       const data = await res.json();
       if (data.success) setVoters(data.data);
     } catch (err) {
