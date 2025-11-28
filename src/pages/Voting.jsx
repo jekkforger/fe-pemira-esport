@@ -34,7 +34,9 @@ export default function Voting() {
 
   // 🔥 Ambil status voting dari backend
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + "/api/status")
+    const BASE = import.meta.env.VITE_API_URL;
+
+    fetch(`${BASE}/api/status`)
       .then((res) => res.json())
       .then((data) => {
         localStorage.setItem("voting_open", JSON.stringify(data.voting_open));
@@ -88,8 +90,10 @@ export default function Voting() {
 
   // ===================== CEK REAL-TIME ADMIN STOP =====================
   useEffect(() => {
+    const BASE = import.meta.env.VITE_API_URL;
+
     const interval = setInterval(async () => {
-      const res = await fetch(import.meta.env.VITE_API_URL + "/api/status");
+      const res = await fetch(`${BASE}/api/status`);
       const { voting_open } = await res.json();
 
       localStorage.setItem("voting_open", JSON.stringify(voting_open));
@@ -102,7 +106,6 @@ export default function Voting() {
           text: "Admin telah mengakhiri sesi voting.",
           background: "#1e1e1e",
           color: "#fff",
-          confirmButtonColor: "#ff7f00",
         }).then(() => navigate("/"));
       }
     }, 1500);
@@ -125,7 +128,6 @@ export default function Voting() {
       });
     }
 
-    // 🔒 CEK ULANG — kalau user coba klik lagi setelah vote
     if (localStorage.getItem("hasVoted") === "true") {
       return Swal.fire({
         icon: "info",
@@ -137,7 +139,6 @@ export default function Voting() {
       });
     }
 
-    // 🔥🔥 KONFIRMASI SEBELUM MEMILIH 🔥🔥
     const confirm = await Swal.fire({
       icon: "question",
       title: "Konfirmasi Pilihan",
@@ -154,7 +155,9 @@ export default function Voting() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const response = await fetch(import.meta.env.VITE_API_URL + "/api/voters", {
+      const BASE = import.meta.env.VITE_API_URL;
+
+      const response = await fetch(`${BASE}/api/voters`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -169,7 +172,6 @@ export default function Voting() {
 
       if (!response.ok) throw new Error(result.error);
 
-      // 🔒 LOCK USER
       localStorage.setItem("hasVoted", "true");
 
       Swal.fire({

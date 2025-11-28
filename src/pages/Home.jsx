@@ -11,7 +11,9 @@ export default function Home() {
 
   // 🔥 Ambil status voting REAL dari backend
   useEffect(() => {
-    fetch(import.meta.env.VITE_API_URL + "/api/status")
+    const BASE = import.meta.env.VITE_API_URL;
+
+    fetch(`${BASE}/api/status`)
       .then((res) => res.json())
       .then((data) => {
         // simpan ke localStorage supaya kode lama tetap jalan
@@ -34,7 +36,9 @@ export default function Home() {
     if (!statusReady) return;
 
     // Ambil status REAL dari backend (bukan dari localStorage)
-    const res = await fetch(import.meta.env.VITE_API_URL + "/api/status");
+    const BASE = import.meta.env.VITE_API_URL;
+    const res = await fetch(`${BASE}/api/status`);
+
     const data = await res.json();
 
     if (!data.voting_open) {

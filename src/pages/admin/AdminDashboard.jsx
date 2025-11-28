@@ -11,6 +11,8 @@ export default function AdminDashboard() {
   const [endTime, setEndTime] = useState(null);
   const [elapsed, setElapsed] = useState("00:00:00");
 
+  const BASE = import.meta.env.VITE_API_URL; // 🔥 Wajib!
+
   // ========================= LOAD DATA =========================
   useEffect(() => {
     setVotingOpen(JSON.parse(localStorage.getItem("voting_open")) || false);
@@ -21,7 +23,7 @@ export default function AdminDashboard() {
     fetchVoters();
   }, []);
 
-  // ========================= TIMER BERJALAN =========================
+  // ========================= TIMER =========================
   useEffect(() => {
     if (!votingOpen || !startTime) return;
 
@@ -56,12 +58,10 @@ export default function AdminDashboard() {
   // ========================= FETCH DATA =========================
   const fetchVotes = async () => {
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + "/api/votes");
+      const res = await fetch(`${BASE}/api/votes`);
       const out = await res.json();
 
-      if (out.success) {
-        setVotes(out.data);
-      }
+      if (out.success) setVotes(out.data);
     } catch (err) {
       console.error("VOTES ERROR:", err);
     }
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
 
   const fetchVoters = async () => {
     try {
-      const res = await fetch(import.meta.env.VITE_API_URL + "/api/voters");
+      const res = await fetch(`${BASE}/api/voters`);
       const data = await res.json();
       if (data.success) setVoters(data.data);
     } catch (err) {
@@ -81,7 +81,6 @@ export default function AdminDashboard() {
   const startVoting = async () => {
     const now = new Date().toLocaleString();
 
-    // 🔥 Update FE (tetap pakai kode lama)
     localStorage.setItem("voting_open", true);
     localStorage.setItem("voting_start_time", now);
     localStorage.removeItem("voting_end_time");
@@ -90,12 +89,12 @@ export default function AdminDashboard() {
     setStartTime(now);
     setEndTime(null);
 
-    // 🔥 Update REAL ke backend (WAJIB)
-    await fetch(import.meta.env.VITE_API_URL + "/api/voting/open", {
+    await fetch(`${BASE}/api/voting/open`, {
       method: "POST",
     });
   };
 
+  // ========================= STOP VOTING =========================
   const stopVoting = async () => {
     const now = new Date().toLocaleString();
 
@@ -105,14 +104,12 @@ export default function AdminDashboard() {
     setVotingOpen(false);
     setEndTime(now);
 
-    // 🔥 Update REAL ke backend (WAJIB)
-    await fetch(import.meta.env.VITE_API_URL + "/api/voting/close", {
+    await fetch(`${BASE}/api/voting/close`, {
       method: "POST",
     });
   };
 
-  // ========================= RESET — DITAMBAHKAN =========================
-  // ========================= RESET — SWEETALERT VERSION =========================
+  // ========================= RESET VOTING =========================
   const resetVoting = async () => {
     const confirmReset = await Swal.fire({
       title: "Reset Voting?",
@@ -130,19 +127,16 @@ export default function AdminDashboard() {
     if (!confirmReset.isConfirmed) return;
 
     try {
-      // Hapus local storage (FE)
       localStorage.removeItem("votes");
       localStorage.removeItem("voters");
       localStorage.removeItem("has_voted");
       localStorage.removeItem("hasVoted");
       localStorage.removeItem("user_name");
 
-      // Reset state FE
       setVotes({});
       setVoters([]);
 
-      // Panggil API reset backend
-      const res = await fetch(import.meta.env.VITE_API_URL + "/api/reset", {
+      const res = await fetch(`${BASE}/api/reset`, {
         method: "DELETE",
       });
 
