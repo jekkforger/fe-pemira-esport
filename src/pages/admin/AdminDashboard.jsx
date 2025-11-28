@@ -11,8 +11,6 @@ export default function AdminDashboard() {
   const [endTime, setEndTime] = useState(null);
   const [elapsed, setElapsed] = useState("00:00:00");
 
-  const BASE = import.meta.env.VITE_API_URL; // 🔥 Wajib!
-
   // ========================= LOAD DATA =========================
   useEffect(() => {
     setVotingOpen(JSON.parse(localStorage.getItem("voting_open")) || false);
@@ -58,7 +56,7 @@ export default function AdminDashboard() {
   // ========================= FETCH DATA =========================
   const fetchVotes = async () => {
     try {
-      const res = await fetch(`${BASE}/api/votes`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/votes`);
       const out = await res.json();
 
       if (out.success) setVotes(out.data);
@@ -69,7 +67,7 @@ export default function AdminDashboard() {
 
   const fetchVoters = async () => {
     try {
-      const res = await fetch(`${BASE}/api/voters`);
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voters`);
       const data = await res.json();
       if (data.success) setVoters(data.data);
     } catch (err) {
@@ -89,7 +87,7 @@ export default function AdminDashboard() {
     setStartTime(now);
     setEndTime(null);
 
-    await fetch(`${BASE}/api/voting/open`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/voting/open`, {
       method: "POST",
     });
   };
@@ -104,7 +102,7 @@ export default function AdminDashboard() {
     setVotingOpen(false);
     setEndTime(now);
 
-    await fetch(`${BASE}/api/voting/close`, {
+    await fetch(`${import.meta.env.VITE_API_URL}/api/voting/close`, {
       method: "POST",
     });
   };
@@ -136,7 +134,7 @@ export default function AdminDashboard() {
       setVotes({});
       setVoters([]);
 
-      const res = await fetch(`${BASE}/api/reset`, {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/reset`, {
         method: "DELETE",
       });
 
