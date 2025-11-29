@@ -89,7 +89,9 @@ export default function Voting() {
   // ===================== CEK REAL-TIME ADMIN STOP =====================
   useEffect(() => {
     const interval = setInterval(async () => {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/status`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/status`
+      );
       const { voting_open } = await res.json();
 
       localStorage.setItem("voting_open", JSON.stringify(voting_open));
@@ -151,22 +153,27 @@ export default function Voting() {
     if (!confirm.isConfirmed) return;
 
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/vote`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: voterName,
-          candidate_id: candidateId,
-        }),
-      });
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/vote`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: voterName,
+            candidate_id: candidateId,
+          }),
+        }
+      );
 
       const result = await response.json();
 
       if (!response.ok) throw new Error(result.error);
 
       localStorage.setItem("hasVoted", "true");
+      localStorage.setItem("voted_candidate", candidateId);
+      localStorage.setItem("voted_at", new Date().toISOString());
 
       Swal.fire({
         icon: "success",
