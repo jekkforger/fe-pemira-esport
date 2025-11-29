@@ -53,10 +53,33 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/status`
+      );
+      const { voting_open, start_time } = await res.json();
+
+      // jika voting baru dimulai → reset seluruh FE
+      const cachedStart = localStorage.getItem("voting_start_cache");
+
+      if (voting_open && start_time !== cachedStart) {
+        localStorage.clear();
+        localStorage.setItem("voting_start_cache", start_time);
+      }
+
+      setVotingOpen(voting_open);
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   // ========================= FETCH DATA =========================
   const fetchVotes = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/results`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/results`
+      );
       const out = await res.json();
 
       if (out.success) setVotes(out.data);
@@ -67,7 +90,9 @@ export default function AdminDashboard() {
 
   const fetchVoters = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/list`);
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/list`
+      );
       const data = await res.json();
       if (data.success) setVoters(data.data);
     } catch (err) {
@@ -134,9 +159,12 @@ export default function AdminDashboard() {
       setVotes({});
       setVoters([]);
 
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/reset`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/voting/reset`,
+        {
+          method: "DELETE",
+        }
+      );
 
       if (!res.ok) throw new Error("Gagal reset data!");
 

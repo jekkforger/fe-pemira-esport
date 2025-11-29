@@ -37,7 +37,7 @@ export default function Voting() {
     fetch(`${import.meta.env.VITE_API_URL}/api/voting/status`)
       .then((res) => res.json())
       .then((data) => {
-        localStorage.setItem("voting_open", JSON.stringify(data.voting_open));
+        setVotingOpen(data.voting_open);
         setStatusReady(true);
       })
       .catch(() => {
@@ -57,7 +57,7 @@ export default function Voting() {
 
     const hasVoted = localStorage.getItem("hasVoted") === "true";
 
-    if (hasVoted) {
+    if (hasVoted && votingOpen === true) {
       Swal.fire({
         icon: "info",
         title: "Kesempatan Sudah Digunakan",
