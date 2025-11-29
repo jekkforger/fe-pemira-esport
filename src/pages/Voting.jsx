@@ -32,12 +32,12 @@ export default function Voting() {
     },
   ];
 
-  // 🔥 Ambil status voting dari backend
+  // ===================== AMBIL STATUS DARI BACKEND =====================
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/voting/status`)
       .then((res) => res.json())
       .then((data) => {
-        setVotingOpen(data.voting_open);
+        setVotingOpen(data.voting_open); // langsung pakai backend
         setStatusReady(true);
       })
       .catch(() => {
@@ -57,7 +57,7 @@ export default function Voting() {
 
     const hasVoted = localStorage.getItem("hasVoted") === "true";
 
-    if (hasVoted && votingOpen === true) {
+    if (hasVoted) {
       Swal.fire({
         icon: "info",
         title: "Kesempatan Sudah Digunakan",
@@ -69,9 +69,7 @@ export default function Voting() {
       return;
     }
 
-    const status = JSON.parse(localStorage.getItem("voting_open"));
-
-    if (!status) {
+    if (!votingOpen) {
       Swal.fire({
         icon: "warning",
         title: "Voting Belum Dibuka",
@@ -82,9 +80,7 @@ export default function Voting() {
       }).then(() => navigate("/"));
       return;
     }
-
-    setVotingOpen(true);
-  }, [statusReady]);
+  }, [statusReady, votingOpen]);
 
   // ===================== CEK REAL-TIME ADMIN STOP =====================
   useEffect(() => {
@@ -94,10 +90,9 @@ export default function Voting() {
       );
       const { voting_open } = await res.json();
 
-      localStorage.setItem("voting_open", JSON.stringify(voting_open));
+      setVotingOpen(voting_open);
 
       if (!voting_open && votingOpen) {
-        setVotingOpen(false);
         Swal.fire({
           icon: "error",
           title: "Voting Ditutup",
@@ -195,7 +190,6 @@ export default function Voting() {
     }
   };
 
-  // ========== 🔥 ANTI-RENDER UI SEBELUM STATUS VALID 🔥 ==========
   if (!statusReady) return null;
   if (!votingOpen) return null;
 
