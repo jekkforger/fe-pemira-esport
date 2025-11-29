@@ -85,9 +85,7 @@ export default function Voting() {
   // ===================== CEK REAL-TIME ADMIN STOP =====================
   useEffect(() => {
     const interval = setInterval(async () => {
-      const res = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/voting/status`
-      );
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/voting/status`);
       const { voting_open } = await res.json();
 
       setVotingOpen(voting_open);
